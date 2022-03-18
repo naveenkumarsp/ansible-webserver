@@ -2,3 +2,5 @@ webservers:
   hosts:
     web01:
        ansible_host: 100.24.99.33
+
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
