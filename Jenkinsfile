@@ -1,5 +1,9 @@
 pipeline{
     agent { label "agentfarm" }
+    environment{
+        KEY_FILE = '/home/ubuntu/.ssh/cprime-public-16-mar22.pem'
+        USER = 'ubuntu'
+    }
     stages {
         stage('Delete the workspace') {
             steps{
@@ -41,11 +45,18 @@ pipeline{
                 input 'Please approve or deny this build'
             }
         }
-        stage('Bad Yum') {
+        stage('Install apache & update website') {
             steps {
-                sh 'sudo yum install httpd -y'
+                sh 'ansible-playbook -u $USER --private-key $KEY_FILE -i $WORKSPACE/host_inventory $WORKSPACE/playbooks/apache-install.yml'
+                sh 'export ANSIBLE_ROLES_PATH=/opt/jenkins/workspace/ansible-playbook/roles && ansible-playbook -u $USER --private-key $KEY_FILE -i $WORKSPACE/host_inventory $WORKSPACE/playbooks/website-update.yml'
             }
         }
+        stage('Test website') {
+            steps {
+                sh 'export ANSIBLE_ROLES_PATH=/opt/jenkins/workspace/ansible-playbook/roles && ansible-playbook -u $USER --private-key $KEY_FILE -i $WORKSPACE/host_inventory $WORKSPACE/playbooks/website-test.yml'
+            }
+        }
+        
     }
     post {
         success {
